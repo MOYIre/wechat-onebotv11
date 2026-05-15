@@ -8,8 +8,8 @@ import (
 	"io"
 	"log"
 	"net/url"
-	"os/exec"
-	"runtime"
+
+	goqrcode "github.com/skip2/go-qrcode"
 )
 
 type Bot struct {
@@ -462,32 +462,16 @@ func GetQrcodeUrl(uuid string) string {
 	return qrcode + uuid
 }
 
-// PrintlnQrcodeUrl 打印登录二维码
+// PrintlnQrcodeUrl 在终端打印登录二维码
 func PrintlnQrcodeUrl(uuid string) {
-	println("访问下面网址扫描二维码登录")
 	qrcodeUrl := GetQrcodeUrl(uuid)
-	println(qrcodeUrl)
-
-	// browser open the login url
-	_ = open(qrcodeUrl)
-}
-
-// open opens the specified URL in the default browser of the user.
-func open(url string) error {
-	var (
-		cmd  string
-		args []string
-	)
-
-	switch runtime.GOOS {
-	case "windows":
-		cmd, args = "cmd", []string{"/c", "start"}
-	case "darwin":
-		cmd = "open"
-	default:
-		// "linux", "freebsd", "openbsd", "netbsd"
-		cmd = "xdg-open"
+	q, err := goqrcode.New(qrcodeUrl, goqrcode.Low)
+	if err != nil {
+		fmt.Println("访问下面网址扫描二维码登录")
+		fmt.Println(qrcodeUrl)
+		return
 	}
-	args = append(args, url)
-	return exec.Command(cmd, args...).Start()
+	fmt.Println(q.ToString(true))
+	fmt.Println("如果二维码无法识别，请访问下面网址扫描二维码登录")
+	fmt.Println(qrcodeUrl)
 }

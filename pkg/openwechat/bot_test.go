@@ -2,11 +2,20 @@ package openwechat
 
 import (
 	"fmt"
+	"os"
 	"testing"
 	"time"
 )
 
+func skipIntegrationTest(t *testing.T) {
+	t.Helper()
+	if os.Getenv("OPENWECHAT_INTEGRATION") != "1" {
+		t.Skip("set OPENWECHAT_INTEGRATION=1 to run integration tests")
+	}
+}
+
 func TestLogin(t *testing.T) {
+	skipIntegrationTest(t)
 	bot := DefaultBot(Desktop)
 	bot.LoginCallBack = func(body CheckLoginResponse) {
 		t.Log("login")
@@ -17,6 +26,7 @@ func TestLogin(t *testing.T) {
 }
 
 func TestLogout(t *testing.T) {
+	skipIntegrationTest(t)
 	bot := DefaultBot(Desktop)
 	bot.LoginCallBack = func(body CheckLoginResponse) {
 		t.Log("login")
@@ -39,6 +49,7 @@ func TestLogout(t *testing.T) {
 }
 
 func TestMessageHandle(t *testing.T) {
+	skipIntegrationTest(t)
 	bot := DefaultBot(Desktop)
 	bot.MessageHandler = func(msg *Message) {
 		if msg.IsText() && msg.Content == "ping" {
@@ -55,6 +66,7 @@ func TestMessageHandle(t *testing.T) {
 }
 
 func TestFriends(t *testing.T) {
+	skipIntegrationTest(t)
 	bot := DefaultBot(Desktop)
 	if err := bot.Login(); err != nil {
 		t.Error(err)
@@ -74,6 +86,7 @@ func TestFriends(t *testing.T) {
 }
 
 func TestGroups(t *testing.T) {
+	skipIntegrationTest(t)
 	bot := DefaultBot(Desktop)
 	if err := bot.Login(); err != nil {
 		t.Error(err)
@@ -93,6 +106,7 @@ func TestGroups(t *testing.T) {
 }
 
 func TestPinUser(t *testing.T) {
+	skipIntegrationTest(t)
 	bot := DefaultBot(Desktop)
 	if err := bot.Login(); err != nil {
 		t.Error(err)
@@ -123,6 +137,7 @@ func TestPinUser(t *testing.T) {
 }
 
 func TestSender(t *testing.T) {
+	skipIntegrationTest(t)
 	bot := DefaultBot(Desktop)
 	bot.MessageHandler = func(msg *Message) {
 		if msg.IsSendByGroup() {
@@ -142,6 +157,7 @@ func TestSender(t *testing.T) {
 // @description: 获取登录二维码(UUID)
 // @param t
 func TestGetUUID(t *testing.T) {
+	skipIntegrationTest(t)
 	bot := DefaultBot(Desktop)
 
 	uuid, err := bot.Caller.GetLoginUUID(bot.Context())
@@ -156,6 +172,7 @@ func TestGetUUID(t *testing.T) {
 // @description: 使用UUID登录
 // @param t
 func TestLoginWithUUID(t *testing.T) {
+	skipIntegrationTest(t)
 	uuid := "oZZsO0Qv8Q=="
 	bot := DefaultBot(Desktop, WithUUIDOption(uuid))
 	err := bot.Login()
