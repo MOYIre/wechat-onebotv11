@@ -1,125 +1,82 @@
-# openwechat
+# AstrBot 对接
 
-[![Go Doc](https://pkg.go.dev/badge/github.com/eatmoreapple/openwechat/pkg/openwechat)](https://pkg.go.dev/github.com/eatmoreapple/openwechat/pkg/openwechat)
-[![Release](https://img.shields.io/github/v/release/eatmoreapple/openwechat.svg?style=flat-square)](https://github.com/eatmoreapple/openwechat/releases)
-[![Go Report Card](https://goreportcard.com/badge/github.com/eatmoreapple/openwechat)](https://goreportcard.com/report/github.com/eatmoreapple/openwechat)
-[![Stars](https://img.shields.io/github/stars/eatmoreapple/openwechat.svg?style=flat-square)](https://img.shields.io/github/stars/eatmoreapple/openwechat.svg?style=flat-square)
-[![Forks](https://img.shields.io/github/forks/eatmoreapple/openwechat.svg?style=flat-square)](https://img.shields.io/github/forks/eatmoreapple/openwechat.svg?style=flat-square)
-[![Sourcegraph](https://sourcegraph.com/github.com/eatmoreapple/openwechat/-/badge.svg)](https://sourcegraph.com/github.com/eatmoreapple/openwechat?badge)
+本仓库新增了 `openwechat-onebot`，将 openwechat 的微信消息转换为 OneBot v11，并通过反向 WebSocket 连接 AstrBot 的 `aiocqhttp` 适配器。
 
-> golang版个人微信号API, 突破登录限制，类似开发公众号一样，开发个人微信号
+## 构建
 
-
-微信机器人，利用微信号完成一些功能的定制化开发⭐
-
-* 模块简单易用，易于扩展
-* 支持定制化开发，如日志记录，自动回复
-* 突破登录限制&#x1F4E3;
-* 无需重复扫码登录
-* 支持多个微信号同时登陆
-
-### 安装
-
-```shell
-go get -u github.com/eatmoreapple/openwechat/pkg/openwechat
+```bash
+gofmt -w pkg/onebot cmd/openwechat-onebot
+go build ./cmd/openwechat-onebot
 ```
 
-### 快速开始
+生成的可执行文件为 `openwechat-onebot`。
 
-```go
-package main
+## 配置
 
-import (
-	"fmt"
-	"github.com/eatmoreapple/openwechat/pkg/openwechat"
-)
+复制 `onebot.example.json` 为 `onebot.json`，按 AstrBot 的 aiocqhttp 适配器端口修改：
 
-func main() {
-	bot := openwechat.DefaultBot(openwechat.Desktop) // 桌面模式
-
-	// 注册消息处理函数
-	bot.MessageHandler = func(msg *openwechat.Message) {
-		if msg.IsText() && msg.Content == "ping" {
-			msg.ReplyText("pong")
-		}
-	}
-	// 注册登陆二维码回调
-	bot.UUIDCallback = openwechat.PrintlnQrcodeUrl
-
-	// 登陆
-	if err := bot.Login(); err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	// 获取登陆的用户
-	self, err := bot.GetCurrentUser()
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	// 获取所有的好友
-	friends, err := self.Friends()
-	fmt.Println(friends, err)
-
-	// 获取所有的群组
-	groups, err := self.Groups()
-	fmt.Println(groups, err)
-
-	// 阻塞主goroutine, 直到发生异常或者用户主动退出
-	bot.Block()
+```json
+{
+  "ws_url": "ws://127.0.0.1:6199/ws",
+  "access_token": "",
+  "hot_reload_file": "hotreload.json",
+  "login_mode": "desktop",
+  "max_reconnect_interval_seconds": 30
 }
 ```
 
-### 支持功能
+AstrBot 侧需要启用 OneBot v11 / aiocqhttp 的反向 WebSocket。AstrBot 默认监听配置为主机 `0.0.0.0`、端口 `6199`、路径 `/ws`；客户端的 `ws_url` 则填写 AstrBot 从 openwechat 所在环境可访问的地址。若 AstrBot 在另一台设备或容器中运行，将 `127.0.0.1` 改为 AstrBot 所在主机可访问的地址。
 
-* 消息回复、给指定对象（好友、群组）发送文本、图片、文件、emoji表情等消息
-* 热登陆（无需重复扫码登录）、自定义消息处理、文件下载、消息防撤回
-* 获取对象信息、设置好友备注、拉好友进群等
-* 更多功能请查看文档
+如果 AstrBot 配置了反向 WebSocket token，`access_token` 必须设置为相同值。`hotreload.json` 包含 Cookie、登录信息和 SyncKey，已经加入 `.gitignore`，不要提交或打印它的内容。
 
-### 文档
+## 运行
 
-[点击查看](https://openwechat.readthedocs.io/zh/latest/)
+```bash
+./openwechat-onebot -config onebot.json
+```
 
-### 项目主页
+也可以用参数临时覆盖配置：
 
-[https://github.com/eatmoreapple/openwechat](https://github.com/eatmoreapple/openwechat)
+```bash
+./openwechat-onebot \
+  -ws ws://127.0.0.1:6199/ws \
+  -token 'your-token' \
+  -hot-reload hotreload.json \
+  -mode desktop
+```
 
-## Thanks
+首次运行会在终端输出二维码，扫码成功后自动保存热登录凭据。后续运行优先尝试热登录，热登录失效时回退到扫码登录。终端二维码是默认行为，不会自动打开外部浏览器。
 
-<a href="https://www.jetbrains.com/?from=openwechat"><img src="https://account.jetbrains.com/static/images/jetbrains-logo-inv.svg" height="200" alt="JetBrains"/></a>
+## 支持范围
 
-** 如果喜欢的话，可以请作者吃包辣条。谢谢支持 :smile: **
+已实现 OneBot v11 反向 WebSocket 的：
 
-<img width="210px" height="210px" src="https://github.com/eatmoreapple/eatmoreapple/blob/main/img/wechat_pay.jpg" align="left">
+- 生命周期连接事件和心跳事件
+- 文本消息、图片消息上报
+- 文本和图片发送
+- `get_login_info`
+- `get_friend_list`
+- `get_group_list`
+- `get_group_info`
+- `get_group_member_list`
+- `get_group_member_info`
+- `get_msg`
+- `delete_msg`（仅限机器人自己发送且仍在微信可撤回时间内的消息）
+- `get_status`
+- `get_version_info`
+- `can_send_image`
+- `can_send_record`
 
+微信字符串 UserName 会通过稳定哈希映射为 OneBot 的 `int64` ID。相同 UserName 在重启后仍会得到相同 ID；发送消息时如果本地还没有反向映射，会扫描联系人列表补全。
 
+OneBot 的混合文本/图片消息会拆分为多条微信消息，因为微信发送接口不支持单条消息混合消息段。入站图片上限为 4 MiB，超出时改为 `[图片]` 文本占位；语音、视频、文件、表情、群管理等消息类型暂不转换。
 
+## 验证
 
+```bash
+GOPROXY=https://goproxy.cn,direct go test ./...
+go vet ./...
+go build ./...
+```
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+集成测试和真实登录仍需要微信账号及扫码，默认的 `go test ./...` 不会执行真实微信登录。

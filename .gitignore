@@ -16,3 +16,7 @@
 .idea
 build
 .DS_Store
+
+# OneBot runtime configuration and sensitive WeChat login session
+onebot.json
+hotreload.json

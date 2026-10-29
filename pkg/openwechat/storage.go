@@ -37,6 +37,11 @@ func (j *fileHotReloadStorage) Read(p []byte) (n int, err error) {
 		if err != nil {
 			return 0, err
 		}
+		if err = j.file.Chmod(0600); err != nil {
+			_ = j.file.Close()
+			j.file = nil
+			return 0, err
+		}
 	}
 	return j.file.Read(p)
 }
@@ -45,10 +50,15 @@ func (j *fileHotReloadStorage) Write(p []byte) (n int, err error) {
 	j.lock.Lock()
 	defer j.lock.Unlock()
 	if j.file == nil {
-		j.file, err = os.Create(j.filename)
+		j.file, err = os.OpenFile(j.filename, os.O_CREATE|os.O_RDWR, 0600)
 		if err != nil {
 			return 0, err
 		}
+	}
+	if err = j.file.Chmod(0600); err != nil {
+		_ = j.file.Close()
+		j.file = nil
+		return 0, err
 	}
 	// reset offset and truncate file
 	if _, err = j.file.Seek(0, io.SeekStart); err != nil {

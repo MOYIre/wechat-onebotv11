@@ -1,0 +1,7 @@
+{
+  "ws_url": "ws://127.0.0.1:6199/ws",
+  "access_token": "",
+  "hot_reload_file": "hotreload.json",
+  "login_mode": "desktop",
+  "max_reconnect_interval_seconds": 30
+}
